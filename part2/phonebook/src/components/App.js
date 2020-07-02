@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import Contacts from "./Contacts";
 import Filter from "./Filter";
 import PersonForm from "./PersonForm";
+import personService from "../services/persons";
 
 const App = () => {
   const [persons, setPersons] = useState([]);
@@ -10,18 +10,43 @@ const App = () => {
   const [newNumber, setNewNumber] = useState("");
   const [searchString, setSearchString] = useState("");
 
+  // Update persons phone number both in database and in visible phonebook
+  const updatePerson = (personToUpdate) => {
+    const idToUpdate = persons.find(
+      (person) => person.name === personToUpdate.name
+    ).id;
+    personService.update(idToUpdate, personToUpdate).then((updatedPerson) => {
+      const updateIndex = persons.findIndex(
+        (person) => person.id === updatedPerson.id
+      );
+      const newPersons = [...persons];
+      newPersons[updateIndex] = updatedPerson;
+      setPersons(newPersons);
+    });
+  };
+
+  // Attempt to add a new person
   const addPerson = (event) => {
     event.preventDefault();
     const names = persons.map((person) => person.name);
-    if (names.includes(newName)) {
-      alert(`${newName} is already added to phonebook`);
-      return null;
-    }
     const newPerson = {
       name: newName,
       number: newNumber,
     };
-    setPersons(persons.concat(newPerson));
+    // If person is found, phone number can be updated
+    if (names.includes(newName)) {
+      const confirmation = window.confirm(
+        `${newPerson.name} is already in the phonebook, replace the old number with a new one?`
+      );
+      if (confirmation) {
+        updatePerson(newPerson);
+      }
+      // Else a new entry is added
+    } else {
+      personService.create(newPerson).then((addedPerson) => {
+        setPersons(persons.concat(addedPerson));
+      });
+    }
   };
 
   const handleNameChange = (event) => {
@@ -37,11 +62,23 @@ const App = () => {
   };
 
   const dataHook = () => {
-    axios.get("http://localhost:3001/persons").then((response) => {
-      setPersons(response.data);
+    personService.getAll().then((initialPersons) => {
+      setPersons(initialPersons);
     });
   };
   useEffect(dataHook, []);
+
+  const removePerson = (personToRemove) => {
+    return () => {
+      const confirmation = window.confirm(`Delete ${personToRemove.name}?`);
+      if (!confirmation) {
+        return null;
+      }
+      personService.remove(personToRemove.id).then(() => {
+        setPersons(persons.filter((person) => person.id !== personToRemove.id));
+      });
+    };
+  };
 
   // Filter persons, case insensitive match to search string
   const shownPersons =
@@ -66,7 +103,7 @@ const App = () => {
         handleNumberChange={handleNumberChange}
       />
       <h2>Numbers</h2>
-      <Contacts persons={shownPersons} />
+      <Contacts persons={shownPersons} removePerson={removePerson} />
     </div>
   );
 };
