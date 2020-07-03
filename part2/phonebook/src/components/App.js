@@ -3,26 +3,37 @@ import Contacts from "./Contacts";
 import Filter from "./Filter";
 import PersonForm from "./PersonForm";
 import personService from "../services/persons";
+import Message from "./Message";
 
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [searchString, setSearchString] = useState("");
+  const [message, setMessage] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   // Update persons phone number both in database and in visible phonebook
   const updatePerson = (personToUpdate) => {
     const idToUpdate = persons.find(
       (person) => person.name === personToUpdate.name
     ).id;
-    personService.update(idToUpdate, personToUpdate).then((updatedPerson) => {
-      const updateIndex = persons.findIndex(
-        (person) => person.id === updatedPerson.id
-      );
-      const newPersons = [...persons];
-      newPersons[updateIndex] = updatedPerson;
-      setPersons(newPersons);
-    });
+    personService
+      .update(idToUpdate, personToUpdate)
+      .then((updatedPerson) => {
+        const updateIndex = persons.findIndex(
+          (person) => person.id === updatedPerson.id
+        );
+        const newPersons = [...persons];
+        newPersons[updateIndex] = updatedPerson;
+        setPersons(newPersons);
+      })
+      .catch((error) => {
+        setErrorMessage(
+          `${personToUpdate.name} has already been removed from server`
+        );
+        setTimeout(() => setErrorMessage(null), 3000);
+      });
   };
 
   // Attempt to add a new person
@@ -45,6 +56,8 @@ const App = () => {
     } else {
       personService.create(newPerson).then((addedPerson) => {
         setPersons(persons.concat(addedPerson));
+        setMessage(`Added ${addedPerson.name} to phonebook`);
+        setTimeout(() => setMessage(null), 3000);
       });
     }
   };
@@ -91,6 +104,8 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Message message={message} color="green" />
+      <Message message={errorMessage} color="red" />
       <div>
         <Filter value={searchString} changer={handleSearchChange} />
       </div>
