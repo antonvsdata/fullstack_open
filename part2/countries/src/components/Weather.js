@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import weatherAPIKey from "../config";
+const weatherAPIKey = process.env.REACT_APP_API_KEY;
 
 const Weather = ({ country }) => {
   const [weather, setWeather] = useState({});
@@ -16,11 +16,17 @@ const Weather = ({ country }) => {
       .then((response) => {
         const apiResponse = response.data;
         setWeather(apiResponse.current);
+      })
+      .catch((err) => {
+        console.log(err);
       });
   };
   useEffect(weatherHook, []);
 
   // To stop errors on first rendering
+  if (!weather) {
+    return null;
+  }
   if (Object.keys(weather).length === 0 && weather.constructor === Object) {
     return null;
   }
