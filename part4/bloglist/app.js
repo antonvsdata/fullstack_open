@@ -1,17 +1,17 @@
-const config = require("./utils/config")
-const express = require("express")
+const config = require('./utils/config')
+const express = require('express')
 const app = express()
-const cors = require("cors")
-const mongoose = require("mongoose")
+const cors = require('cors')
+const mongoose = require('mongoose')
 // Routers
-const blogRouter = require("./controllers/blogs")
+const blogRouter = require('./controllers/blogs')
 //Middleware
-const middleware = require("./utils/middleware")
-const logger = require("./utils/logger")
-require("dotenv").config()
+const middleware = require('./utils/middleware')
+const logger = require('./utils/logger')
+require('dotenv').config()
 
 // Connection to database
-logger.info("connecting to", config.MONGODB_URI)
+logger.info('connecting to', config.MONGODB_URI)
 
 mongoose
   .connect(config.MONGODB_URI, {
@@ -19,10 +19,10 @@ mongoose
     useUnifiedTopology: true,
   })
   .then(() => {
-    logger.info("connected to MongoDB")
+    logger.info('connected to MongoDB')
   })
   .catch((error) => {
-    logger.error("error connection to MongoDB:", error.message)
+    logger.error('error connection to MongoDB:', error.message)
   })
 
 // Middleware
@@ -31,7 +31,7 @@ app.use(express.json())
 app.use(middleware.requestLogger)
 
 // Routers
-app.use("/api/blogs", blogRouter)
+app.use('/api/blogs', blogRouter)
 
 // Error handler middleware
 app.use(middleware.unknownEndpoint)

@@ -2,7 +2,7 @@ POST http://localhost:3003/api/blogs
 Content-Type: application/json
 
 {
-  "title": "How to Use t-SNE Effectively",
+  "title": "How to do t-SNE Effectively",
   "author": "Martin Wattenberg",
   "url": "https://distill.pub/2016/misread-tsne/",
   "likes": 0
