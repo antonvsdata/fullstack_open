@@ -40,7 +40,6 @@ const mostLikes = (blogs) => {
     return result
   }
   const likeCount = blogs.reduce(reducer, {})
-  console.log(likeCount)
   const maxAuthor = _.maxBy(Object.keys(likeCount), (k) => likeCount[k])
   return maxAuthor
 }
