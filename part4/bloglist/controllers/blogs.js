@@ -1,22 +1,36 @@
 const blogRouter = require('express').Router()
 const Blog = require('../models/blog')
 const mongoose = require('mongoose')
+const User = require('../models/user')
 mongoose.set('useFindAndModify', false)
 
 blogRouter.get('/', async (request, response) => {
-  const blogs = await Blog.find({})
+  const blogs = await Blog.find({}).populate('user', { username: 1, name: 1 })
   response.json(blogs)
 })
 
 blogRouter.post('/', async (request, response) => {
-  const content = request.body
+  const body = { ...request.body }
   if (!Object.hasOwnProperty('likes')) {
-    content.likes = 0
+    body.likes = 0
   }
-  const blog = new Blog(content)
 
-  const result = await blog.save()
-  response.status(201).json(result)
+  const users = await User.find({})
+  const user = users[0]
+
+  const blog = new Blog({
+    title: body.title,
+    author: body.author,
+    url: body.url,
+    likes: body.likes,
+    user: user._id,
+  })
+
+  const savedBlog = await blog.save()
+  user.blogs = user.blogs.concat(savedBlog._id)
+  await user.save()
+
+  response.status(201).json(savedBlog)
 })
 
 blogRouter.delete('/:id', async (request, response) => {
