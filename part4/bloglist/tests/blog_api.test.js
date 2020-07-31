@@ -1,14 +1,40 @@
 const supertest = require('supertest')
 const mongoose = require('mongoose')
 const helper = require('./test_helper')
+const bcrypt = require('bcrypt')
 const app = require('../app')
 const api = supertest(app)
 
 const Blog = require('../models/blog')
+const User = require('../models/user')
 
+// Initialize the database before each test
+let login
 beforeEach(async () => {
+  await User.deleteMany({})
+  const passwordHash = await bcrypt.hash('pugsnotdrugs', 10)
+  const user = new User({
+    username: 'testuser',
+    passwordHash,
+  })
+  await user.save()
+
+  login = await api.post('/api/login').send({
+    username: 'testuser',
+    password: 'pugsnotdrugs',
+  })
+
+  const addedUser = await User.findOne({ username: user.username }).exec()
+
+  let blogArray = helper.blogsArray
+  blogArray = blogArray.map((blog) => {
+    let userBlog = blog
+    userBlog.user = addedUser._id
+    return userBlog
+  })
+
   await Blog.deleteMany({})
-  await Blog.insertMany(helper.blogsArray)
+  await Blog.insertMany(blogArray)
 })
 
 test('blogs returned as json', async () => {
@@ -30,6 +56,24 @@ test('identifier field is named "id"', async () => {
   expect(blog._id).not.toBeDefined()
 })
 
+test('adding a blog without token fails', async () => {
+  const newBlog = {
+    title: 'Online R trainings',
+    author: 'eoda GmbH',
+    url: 'https://www.r-bloggers.com/online-r-trainings/',
+    likes: 0,
+  }
+
+  await api
+    .post('/api/blogs')
+    .send(newBlog)
+    .expect(401)
+    .expect('Content-Type', /application\/json/)
+
+  const blogsAtEnd = await helper.blogsInDb()
+  expect(blogsAtEnd).toHaveLength(helper.blogsArray.length)
+})
+
 test('new blog is added successfully', async () => {
   const newBlog = {
     title: 'Online R trainings',
@@ -37,8 +81,10 @@ test('new blog is added successfully', async () => {
     url: 'https://www.r-bloggers.com/online-r-trainings/',
     likes: 0,
   }
+
   await api
     .post('/api/blogs')
+    .set('Authorization', `bearer ${login.body.token}`)
     .send(newBlog)
     .expect(201)
     .expect('Content-Type', /application\/json/)
@@ -56,7 +102,10 @@ test('new blog with undefined likes get likes: 0', async () => {
     author: 'eoda GmbH',
     url: 'https://www.r-bloggers.com/online-r-trainings/',
   }
-  await api.post('/api/blogs').send(newBlog)
+  await api
+    .post('/api/blogs')
+    .set('Authorization', `bearer ${login.body.token}`)
+    .send(newBlog)
 
   const addedDoc = await helper.blogsInDb({ title: newBlog.title })
   expect(addedDoc[0].likes).toBe(0)
@@ -77,7 +126,11 @@ test('title and url are required', async () => {
     },
   ]
   for (let newBlog of newBlogs) {
-    await api.post('/api/blogs').send(newBlog).expect(400)
+    await api
+      .post('/api/blogs')
+      .set('Authorization', `bearer ${login.body.token}`)
+      .send(newBlog)
+      .expect(400)
   }
 })
 
@@ -85,7 +138,10 @@ test('blog can be deleted', async () => {
   const blogs = await helper.blogsInDb()
   const idrm = blogs[0].id
 
-  await api.delete(`/api/blogs/${idrm}`).expect(204)
+  await api
+    .delete(`/api/blogs/${idrm}`)
+    .set('Authorization', `bearer ${login.body.token}`)
+    .expect(204)
 
   const blogsAtEnd = await helper.blogsInDb()
   expect(blogsAtEnd).toHaveLength(helper.blogsArray.length - 1)
@@ -94,7 +150,7 @@ test('blog can be deleted', async () => {
   expect(ids).not.toContain(idrm)
 })
 
-test('blog can be deleted', async () => {
+test('blog can be updated', async () => {
   const blogs = await helper.blogsInDb()
   const idup = blogs[0].id
 

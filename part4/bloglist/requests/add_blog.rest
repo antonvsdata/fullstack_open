@@ -1,10 +1,9 @@
 POST http://localhost:3001/api/blogs
 Content-Type: application/json
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFudG9udnNkYXRhIiwiaWQiOiI1ZjIzZDllOGU4YzNkMjI5NWMxMmUyZTgiLCJpYXQiOjE1OTYxODY4NTV9.e9PitAu5916tbkJOTedbCDZrBL1n4xk-Q8As9zYcuo0
 
 {
-  "title": "Testing user ID",
-  "author": "Matti Luukkainen",
-  "url": "https://mluukkai.fi",
-  "likes": 0,
-  "userId": "5f23aec3358cd72a6cc88ba6"
+  "title": "Anton's awesome post",
+  "author": "Anton Klåvus",
+  "url": "https://anton.fi"
 }

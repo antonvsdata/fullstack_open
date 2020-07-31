@@ -11,12 +11,11 @@ describe('when there is initially one user at db', () => {
     await User.deleteMany({})
 
     const passwordHash = await bcrypt.hash('sekret', 10)
-    await User.insertMany([
-      {
-        username: 'root',
-        passwordHash,
-      },
-    ])
+    user = new User({
+      username: 'root',
+      passwordHash,
+    })
+    await user.save()
   })
 
   test('creation succeeds with a fresh username', async () => {
